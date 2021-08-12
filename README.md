@@ -1,8 +1,8 @@
-# [Software name]
+# LocalData-ETL
 
 # Description
 
-[High-level description, describing what exactly software does.]
+These software modules are to be used to process local RegulonDB data. It covers everything for processes after data extraction from Ecocyc.
 
 # Motivation
 
