@@ -12,7 +12,8 @@ def load_file(file_path):
 
 def set_log(log_path, log_name="evidence.log"):
     if not os.path.isdir(log_path):
-        raise IOError("{} directory does not exist, please edit your log argument value".format(log_path))
+        raise IOError(
+            "{} directory does not exist, please edit your log argument value".format(log_path))
     log_path = os.path.join(log_path, log_name)
     logging.basicConfig(filename=log_path,
                         format='%(levelname)s - %(asctime)s - %(message)s', filemode='w', level=logging.INFO)
@@ -21,10 +22,14 @@ def set_log(log_path, log_name="evidence.log"):
 
 def updater(evidences, collection):
     for evidence in evidences:
-        evidence_id = evidence.get('_id')
-        evidence_type = evidence.get('type')
-        evidence_head = evidence.get('head')
-        evidence_pertains_to = evidence.get('pertainsTo')
+        evidence_id = evidence.get('_id', None)
+        evidence_type = evidence.get('type', None)
+        evidence_head = evidence.get('head', None)
+        evidence_pertains_to = evidence.get('pertainsTo', None)
+        evidence_cv_rule = evidence.get('crossEvidenceCodeRule', None)
+        evidence_category = evidence.get('evidenceCategory', None)
+        evidence_note_web = evidence.get('noteWeb', None)
+        evidence_approach = evidence.get('evidenceApproach', None)
 
         new_values = {}
         if evidence_type:
@@ -33,6 +38,14 @@ def updater(evidences, collection):
             new_values.setdefault("head", evidence_head)
         if evidence_pertains_to:
             new_values.setdefault("pertainsTo", evidence_pertains_to)
+        if evidence_cv_rule:
+            new_values.setdefault('crossEvidenceCodeRule', evidence_cv_rule)
+        if evidence_category:
+            new_values.setdefault('evidenceCategory', evidence_category)
+        if evidence_note_web:
+            new_values.setdefault('noteWeb', evidence_note_web)
+        if evidence_approach:
+            new_values.setdefault('evidenceApproach', evidence_approach)
 
         query = {"_id": evidence_id}
         formatted_new_values = {
@@ -44,13 +57,17 @@ def updater(evidences, collection):
 
 def uploader(evidences, collection):
     for evidence in evidences:
-        evidence_id = evidence.get('_id')
-        evidence_type = evidence.get('type')
-        evidence_head = evidence.get('head')
-        evidence_pertains_to = evidence.get('pertainsTo')
-        evidence_code = evidence.get('code')
-        evidence_name = evidence.get('name')
-        evidence_note = evidence.get('note')
+        evidence_id = evidence.get('_id', None)
+        evidence_type = evidence.get('type', None)
+        evidence_head = evidence.get('head', None)
+        evidence_pertains_to = evidence.get('pertainsTo', None)
+        evidence_code = evidence.get('code', None)
+        evidence_name = evidence.get('name', None)
+        evidence_note = evidence.get('note', None)
+        evidence_cv_rule = evidence.get('crossEvidenceCodeRule', None)
+        evidence_category = evidence.get('evidenceCategory', None)
+        evidence_note_web = evidence.get('noteWeb', None)
+        evidence_approach = evidence.get('evidenceApproach', None)
 
         new_values = {}
         if evidence_id:
@@ -67,6 +84,14 @@ def uploader(evidences, collection):
             new_values.setdefault("name", evidence_name)
         if evidence_note:
             new_values.setdefault("note", evidence_note)
+        if evidence_cv_rule:
+            new_values.setdefault('crossEvidenceCodeRule', evidence_cv_rule)
+        if evidence_category:
+            new_values.setdefault('evidenceCategory', evidence_category)
+        if evidence_note_web:
+            new_values.setdefault('noteWeb', evidence_note_web)
+        if evidence_approach:
+            new_values.setdefault('evidenceApproach', evidence_approach)
 
         # print(new_values)
         try:

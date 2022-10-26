@@ -8,7 +8,7 @@ def load():
     parser.add_argument(
         "-c", "--catalog",
         help="Dataset with the evidences to be processed",
-        default="Input_Data/RegulonDB-Evidence_Catalog_v1.0.xls"
+        default="Input_Data/RegulonDB_Evidence_Catalog_v1.5.1.xlsx"
     )
     parser.add_argument(
         "-u", "--url",
@@ -22,6 +22,14 @@ def load():
         help="Directory with the evidences to update",
         default="regulondbmultigenomic",
         metavar="regulondbmultigenomic"
+    )
+
+    parser.add_argument(
+        "-org",
+        "--organism",
+        help="Organism whose information is been downloaded.",
+        default="ECOLI",
+        metavar="ecoli",
     )
 
     parser.add_argument(
@@ -39,6 +47,12 @@ def load():
         "-un", "--unknwon",
         help="The unknwon evidences file",
         default="Results/unknwon_evidences.json",
+    )
+
+    parser.add_argument(
+        "-r", "--rules",
+        help="The evidence rules file",
+        default="Results/Rules/evidences_rules.json",
     )
 
     parser.add_argument(

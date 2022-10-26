@@ -18,3 +18,4 @@ def create_json(data, filename):
         filename = "{}.json".format(filename)
     with open(filename, 'w') as fn:
         json.dump(data, fn, indent=2)
+    print(f'JSON file created at: \n\t{filename}')

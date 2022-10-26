@@ -3,9 +3,9 @@ import json
 import re
 
 
-def get_data_frame(filename: str, load_sheet: str = "Evidences", rows_to_skip: int = 20) -> pandas.DataFrame:
+def get_data_frame(filename: str, load_sheet: str = "Evidence Catalog", rows_to_skip: int = 0) -> pandas.DataFrame:
     evidence_df = pandas.read_excel(
-        filename, sheet_name=load_sheet, skiprows=rows_to_skip)
+        filename, sheet_name=load_sheet, skiprows=rows_to_skip, comment='#', na_values='-')
     return evidence_df
 
 
