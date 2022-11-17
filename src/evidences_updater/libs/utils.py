@@ -30,6 +30,7 @@ def updater(evidences, collection):
         evidence_category = evidence.get('evidenceCategory', None)
         evidence_note_web = evidence.get('noteWeb', None)
         evidence_approach = evidence.get('evidenceApproach', None)
+        evidence_code = evidence.get('code', None)
 
         new_values = {}
         if evidence_type:
@@ -46,6 +47,8 @@ def updater(evidences, collection):
             new_values.setdefault('noteWeb', evidence_note_web)
         if evidence_approach:
             new_values.setdefault('evidenceApproach', evidence_approach)
+        if evidence_code:
+            new_values.setdefault('code', evidence_code)
 
         query = {"_id": evidence_id}
         formatted_new_values = {
