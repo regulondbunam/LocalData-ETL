@@ -6,7 +6,7 @@ import multigenomic_api
 import identifiers_api
 
 from libs import utils
-from libs import evicence_catalog_utils
+from libs import evidence_catalog_utils
 
 evidence_codes = {}
 new_evidence_codes = {}
@@ -126,10 +126,13 @@ def evidence_rule_builder(evidence_obj):
     '''
     evidence_rule_obj = {}
     evidence_rule_values = evidence_obj.get('name', None)
-    evidence_rule_values = evidence_rule_values.replace(
+    '''evidence_rule_values = evidence_rule_values.replace(
         'cross validation ', '')
     evidence_rule_values = evidence_rule_values.replace('(', '')
-    evidence_rule_values = evidence_rule_values.replace(')', '')
+    evidence_rule_values = evidence_rule_values.replace(')', '')'''
+    evidence_rule_values = evidence_rule_values[
+        evidence_rule_values.find("(") + 1:evidence_rule_values.find(")")
+    ]
     evidence_rule_values = evidence_rule_values.split('/')
     if isinstance(evidence_rule_values, list):
         evidence_rule_values = [int(x) for x in evidence_rule_values]
@@ -234,7 +237,7 @@ def extract_process(
     evidence_original_ids = get_evidences_ids(
         url, database, organism, EV_COLLECTION)
     # print(evidence_original_ids)
-    evidences_catalog = evicence_catalog_utils.get_evidences_catalog(
+    evidences_catalog = evidence_catalog_utils.get_evidences_catalog(
         catalog_evidences_filename)
     new_evidences = []
     update_evidences = []
