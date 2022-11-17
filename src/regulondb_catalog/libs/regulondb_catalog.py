@@ -126,10 +126,6 @@ def evidence_rule_builder(evidence_obj):
     '''
     evidence_rule_obj = {}
     evidence_rule_values = evidence_obj.get('name', None)
-    '''evidence_rule_values = evidence_rule_values.replace(
-        'cross validation ', '')
-    evidence_rule_values = evidence_rule_values.replace('(', '')
-    evidence_rule_values = evidence_rule_values.replace(')', '')'''
     evidence_rule_values = evidence_rule_values[
         evidence_rule_values.find("(") + 1:evidence_rule_values.find(")")
     ]
@@ -361,4 +357,4 @@ def extract_process(
                       'subClassAcronym': 'EVC', 'collectionData': update_evidences}, update_evidences_filename)
     utils.create_json({'classAcronym': 'ECOLI', 'collectionName': 'evidences', 'organism': 'ECOLI',
                       'subClassAcronym': 'EVC', 'collectionData': unknown_evidences}, unknown_evidences_filename)
-    utils.create_json({'rules': evidence_rules}, evidence_rules_filename)
+    utils.create_json(evidence_rules, evidence_rules_filename)
