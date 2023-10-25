@@ -12,6 +12,7 @@
 Results/
 Input_Data/
 data-release-tools/
+DatasetsTFBSRegulonDB*/
 *.pyc
 *.log
 

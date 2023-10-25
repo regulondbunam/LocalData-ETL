@@ -26,6 +26,34 @@ def load():
     )
 
     parser.add_argument(
+        "-org", "--organism",
+        help="Organism whose information is been downloaded.",
+        default="ECOLI",
+        metavar="ecoli",
+    )
+
+    parser.add_argument(
+        "-v", "--version",
+        help="RegulonDB's release version",
+        metavar="12.0",
+        required=True
+    )
+
+    parser.add_argument(
+        "-s", "--source",
+        help="Source's name",
+        metavar="EcoCyc",
+        required=True
+    )
+
+    parser.add_argument(
+        "-sv", "--sourceversion",
+        help="Source's release version",
+        metavar="27.0",
+        required=True
+    )
+
+    parser.add_argument(
         "-i", "--input-file",
         help="JSON input file to process",
         required=False
@@ -42,6 +70,12 @@ def load():
         help="URL to establish a connection between the process and MongoDB",
         default="mongodb://localhost:27017/",
         metavar="mongodb://localhost:27017/"
+    )
+
+    parser.add_argument(
+        "-r", "--rules",
+        help="The evidence rules file",
+        default="Results/Rules/evidences_rules.json",
     )
 
     # COLLECTIONS ARGUMENTS
