@@ -217,7 +217,7 @@ def extract_process(
     organism: str
 ) -> None:
     '''
-    Manage the extraction transformation an load of evidences json files.
+    Manage the extraction transformation and load of evidences json files.
 
     Params:
         - `catalog_evidences_filename`, `String`, Evidence catalog file name.

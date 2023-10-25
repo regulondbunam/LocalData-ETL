@@ -8,7 +8,14 @@ def load():
     parser.add_argument(
         "-c", "--catalog",
         help="Dataset with the evidences to be processed",
-        default="Input_Data/RegulonDB_Evidence_Catalog_v1.5.1.xlsx"
+        default="Input_Data/RegulonDB_Evidence_Catalog_v2.0.xlsx"
+    )
+
+    parser.add_argument(
+        "-rc", "--remote-catalog",
+        help="Dataset with the evidences to be processed from url",
+        default="https://docs.google.com/spreadsheets/d/1EFwbIHntVgF7FxMVkWT-lpZzcRpx1Fyu/edit?usp=share_link&ouid=105816430825590805829&rtpof=true&sd=true",
+        metavar="https://docs.google.com/spreadsheets/d/1EFwbIHntVgF7FxMVkWT-lpZzcRpx1Fyu/edit?usp=share_link&ouid=105816430825590805829&rtpof=true&sd=true"
     )
     parser.add_argument(
         "-u", "--url",
