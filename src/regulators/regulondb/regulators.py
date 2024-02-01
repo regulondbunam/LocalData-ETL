@@ -1,9 +1,11 @@
 import os
 
 import pythoncyc
+import pymongo
 
-from utils import constants as EC
-from utils import utils
+from src.regulators.utils import constants as EC
+from src.regulators.utils import utils
+
 
 
 class Regulator(object):
@@ -13,6 +15,10 @@ class Regulator(object):
         # Obj properties
         self.regulator_obj = kwargs.get('regulator_obj', None)
         self.regulator_cyc_id = kwargs.get('regulator_cyc_id', None)
+        self.database = kwargs.get('database', None)
+        self.url = kwargs.get('url', None)
+        self.organism = kwargs.get('organism', None)
+        self.ris_cyc_ids = kwargs.get('ris_cyc_ids', None)
 
         # Dict properties
         self.regulator_id = kwargs.get("regulator_id", None)
@@ -25,6 +31,7 @@ class Regulator(object):
         self.regulator_type = kwargs.get("regulator_type", None)
         self.synonyms = kwargs.get("synonyms", None)
         self.regulator_class = kwargs.get("regulator_class", None)
+        self.regulation_type = kwargs.get("regulation_type", None)
 
     # Properties
 
@@ -149,8 +156,41 @@ class Regulator(object):
     @regulator_class.setter
     def regulator_class(self, regulator_class=None):
         if regulator_class is None:
-            print(self.regulator_cyc_id)
             self._regulator_class = Regulator.pt_conn.get_frame_direct_parents(
                 self.regulator_cyc_id)
         else:
             self._regulator_class = regulator_class
+
+    @property
+    def regulation_type(self):
+        return self._regulation_type
+
+    @regulation_type.setter
+    def regulation_type(self, regulation_type=None):
+        if regulation_type is None:
+            ri_collection_name = 'regulatoryInteractions'
+            mongo_client = pymongo.MongoClient(self.url)
+            db = mongo_client[self.database]
+            collection = db[ri_collection_name]
+            ris = collection.find({
+                "regulator.name": self.name
+            })
+            self._regulation_type = []
+            for ri in ris:
+                ri_cyc_id = utils.get_cyc_id_by_rdb_id(ri.get('_id'), self.ris_cyc_ids)
+                try:
+                    ri_parents = Regulator.pt_conn.get_frame_all_parents(
+                        ri_cyc_id)
+                    if '|Transcription-Factor-Binding|' in ri_parents:
+                        if 'Transcription-Factor-Binding' not in self._regulation_type:
+                            self._regulation_type.append('Transcription-Factor-Binding')
+                    if '|Allosteric-Regulation-of-RNAP|' in ri_parents:
+                        if 'Allosteric-Regulation-of-RNAP' not in self._regulation_type:
+                            self._regulation_type.append('Allosteric-Regulation-of-RNAP')
+                    if '|RNA-Mediated-Translation-Regulation|' in ri_parents:
+                        if 'RNA-Mediated-Translation-Regulation' not in self._regulation_type:
+                            self._regulation_type.append('RNA-Mediated-Translation-Regulation')
+                except pythoncyc.PTools.PToolsError as pt_er:
+                    print(pt_er, ri.get("_id"), ri_cyc_id)
+        else:
+            self._regulation_type = regulation_type

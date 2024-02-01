@@ -16,7 +16,7 @@ def load():
     parser.add_argument(
         "-d", "--directory",
         help="Directory where the json files are located",
-        default="Results/"
+        default="../RawData/Regulators/"
     )
 
     parser.add_argument(
@@ -29,7 +29,7 @@ def load():
     parser.add_argument(
         "-l", "--log",
         help="Directory that contains log of the invalid data, the reason why the data is being rejected.",
-        default="Results/log/"
+        default="../logs/Regulators"
     )
 
     parser.add_argument(

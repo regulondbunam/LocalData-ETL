@@ -8,7 +8,7 @@ def load():
     parser.add_argument(
         "-c", "--catalog",
         help="Dataset with the evidences to be processed",
-        default="Input_Data/RegulonDB_Evidence_Catalog_v2.0.xlsx"
+        default="../InputData/EvidenceCatalog/RegulonDB_Evidence_Catalog_v3.2.xlsx"
     )
 
     parser.add_argument(
@@ -42,30 +42,30 @@ def load():
     parser.add_argument(
         "-n", "--new",
         help="New evidences file",
-        default="Results/new_evidences/new_evidences.json",
+        default="../RawData/EvidenceCatalog/new_evidences/new_evidences.json",
     )
     parser.add_argument(
         "-up", "--update",
         help="The evidences to update",
-        default="Results/update_evidences.json",
+        default="../RawData/EvidenceCatalog/update_evidences.json",
     )
 
     parser.add_argument(
         "-un", "--unknwon",
         help="The unknwon evidences file",
-        default="Results/unknwon_evidences.json",
+        default="../RawData/EvidenceCatalog/unknwon_evidences.json",
     )
 
     parser.add_argument(
         "-r", "--rules",
         help="The evidence rules file",
-        default="Results/Rules/evidences_rules.json",
+        default="../RawData/EvidenceCatalog/Rules/evidences_rules.json",
     )
 
     parser.add_argument(
         "-l", "--log",
         help="Directory that contains log of the invalid data, the reason why the data is being rejected.",
-        default="Results/log/"
+        default="../logs/EvidenceCatalog/"
     )
     arguments = parser.parse_args()
     return arguments

@@ -48,3 +48,7 @@ def get_cyc_ids(url, collection_name, ontology_name, organism):
     )
     id_api.disconnect()
     return collection_identifiers
+
+def get_cyc_id_by_rdb_id(rdb_id, cyc_ids):
+    cyc_id = list(cyc_ids.keys())[list(cyc_ids.values()).index(rdb_id)]
+    return cyc_id

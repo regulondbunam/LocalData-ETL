@@ -55,7 +55,7 @@ def get_confidences(mg_objects, collection_name, mg_api, mg_db):
             mg_collection = mg_db[collection_name]
             utils.updater(object_id, confidence_level, mg_collection)
             # print(f'{collection_name} : {object_id}')
-            #print(f'confidenceLevel: {confidence_level}, {confidence_levels}')
+            # print(f'confidenceLevel: {confidence_level}, {confidence_levels}')
     print(
         f'\tTotal of {collection_name} updated {updated_documents} of {len(mg_objects)}')
 
@@ -71,10 +71,10 @@ def get_additive_evidences_ids(url, collection_name, organism, ontology_name=Non
     return collection_identifiers
 
 
-def additive_evidences(mg_objects, mg_collection_name, ae_collection, rules, mg_db, **kwargs):
+def additive_evidences(mg_objects, mg_collection_name, ae_collection, rules, mg_db, collection_identifiers, **kwargs):
+    # collection_identifiers = get_additive_evidences_ids(
+    #    kwargs.get('url', None), ae_collection, kwargs.get('organism'))
     # print(collection_identifiers)
-    collection_identifiers = get_additive_evidences_ids(
-        kwargs.get('url', None), ae_collection, kwargs.get('organism'))
     objs_w_ae = 0
     for mg_object in mg_objects:
         print(f'Working on object {mg_object.id}')
@@ -82,7 +82,7 @@ def additive_evidences(mg_objects, mg_collection_name, ae_collection, rules, mg_
         additive_evidence_list = []
         object_citations = mg_object.citations
         evidences = []
-        mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
+        #mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
         for citation in object_citations:
             if citation.evidences_id is not None:
                 mg_evidence = mg_api.evidences.find_by_id(
@@ -94,12 +94,12 @@ def additive_evidences(mg_objects, mg_collection_name, ae_collection, rules, mg_
                         'rule': mg_evidence.cv_code_rule
                     }
                     evidences.append(evidence)
-        mg_api.disconnect()
+        #mg_api.disconnect()
         if mg_collection_name == 'regulatoryInteractions':
             ri_site = mg_object.regulatory_sites_id
             if ri_site:
-                mg_api.connect(kwargs.get('database', None),
-                               kwargs.get('url', None))
+                #mg_api.connect(kwargs.get('database', None),
+                #               kwargs.get('url', None))
                 mg_site = mg_api.regulatory_sites.find_by_id(ri_site)
                 site_citations = mg_site.citations
                 for citation in site_citations:
@@ -113,7 +113,7 @@ def additive_evidences(mg_objects, mg_collection_name, ae_collection, rules, mg_
                                 'rule': mg_evidence.cv_code_rule
                             }
                             evidences.append(evidence)
-                mg_api.disconnect()
+                #mg_api.disconnect()
 
         ev_rules = []
         acepted_rules = []
@@ -181,12 +181,14 @@ def additive_evidences(mg_objects, mg_collection_name, ae_collection, rules, mg_
                     id_object = set_identifier_object(additive_evidence,
                                                       'additiveEvidences', **metadata_properties)
                     # print(id_object)
+                    mg_api.disconnect()
                     handle_id(id_object, collection_identifiers,
                               kwargs.get('url', None))
                     new_collection_identifiers = get_additive_evidences_ids(
                         kwargs.get('url', None), ae_collection, kwargs.get('organism'))
                     new_id = new_collection_identifiers[additive_evidence.get(
                         '_id')]
+                    mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
                 else:
                     new_id = existing_id
                 additive_evidence.update({'_id': new_id})
@@ -300,11 +302,13 @@ def build_additive_evidence(rules, evidences):
 
 def promoters_confidences(mg_db, rules, **kwargs):
     collection_name = 'promoters'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.promoters.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -312,11 +316,13 @@ def promoters_confidences(mg_db, rules, **kwargs):
 
 def transcription_factors_confidences(mg_db, rules, **kwargs):
     collection_name = 'transcriptionFactors'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.transcription_factors.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -324,11 +330,13 @@ def transcription_factors_confidences(mg_db, rules, **kwargs):
 
 def transcription_units_confidences(mg_db, rules, **kwargs):
     collection_name = 'transcriptionUnits'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.transcription_units.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -336,11 +344,13 @@ def transcription_units_confidences(mg_db, rules, **kwargs):
 
 def genes_confidences(mg_db, rules, **kwargs):
     collection_name = 'genes'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.genes.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -348,11 +358,13 @@ def genes_confidences(mg_db, rules, **kwargs):
 
 def products_confidences(mg_db, rules, **kwargs):
     collection_name = 'products'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.products.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -360,11 +372,13 @@ def products_confidences(mg_db, rules, **kwargs):
 
 def regulatory_complexes_confidences(mg_db, rules, **kwargs):
     collection_name = 'regulatoryComplexes'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.regulatory_complexes.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -372,11 +386,13 @@ def regulatory_complexes_confidences(mg_db, rules, **kwargs):
 
 def regulatory_continuants_confidences(mg_db, rules, **kwargs):
     collection_name = 'regulatoryContinuants'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.regulatory_continuants.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -384,11 +400,13 @@ def regulatory_continuants_confidences(mg_db, rules, **kwargs):
 
 def regulatory_interactions_confidences(mg_db, rules, **kwargs):
     collection_name = 'regulatoryInteractions'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.regulatory_interactions.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -396,11 +414,13 @@ def regulatory_interactions_confidences(mg_db, rules, **kwargs):
 
 def regulatory_sites_confidences(mg_db, rules, **kwargs):
     collection_name = 'regulatorySites'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.regulatory_sites.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -408,11 +428,13 @@ def regulatory_sites_confidences(mg_db, rules, **kwargs):
 
 def segments_confidences(mg_db, rules, **kwargs):
     collection_name = 'segments'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.segments.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -420,11 +442,13 @@ def segments_confidences(mg_db, rules, **kwargs):
 
 def sigma_factors_confidences(mg_db, rules, **kwargs):
     collection_name = 'sigmaFactors'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.sigma_factors.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
@@ -432,11 +456,13 @@ def sigma_factors_confidences(mg_db, rules, **kwargs):
 
 def terminators_confidences(mg_db, rules, **kwargs):
     collection_name = 'terminators'
+    collection_identifiers = get_additive_evidences_ids(
+        kwargs.get('url', None), 'additiveEvidences', kwargs.get('organism'))
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     mg_objects = mg_api.terminators.get_all()
-    mg_api.disconnect()
+    # mg_api.disconnect()
     additive_evidences(mg_objects, collection_name,
-                       'additiveEvidences', rules, mg_db, **kwargs)
+                       'additiveEvidences', rules, mg_db, collection_identifiers, **kwargs)
     mg_api.connect(kwargs.get('database', None), kwargs.get('url', None))
     get_confidences(mg_objects, collection_name, mg_api, mg_db)
     mg_api.disconnect()
