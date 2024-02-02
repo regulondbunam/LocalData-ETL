@@ -100,7 +100,7 @@ class Regulator(object):
     def confidence_level(self, confidence_level=None):
         if confidence_level is None:
             try:
-                self._confidence_level = self.regulator_object.confidence_level
+                self._confidence_level = self.regulator_obj.confidence_level
             except AttributeError:
                 self._confidence_level = None
         else:
@@ -175,7 +175,9 @@ class Regulator(object):
             ris = collection.find({
                 "regulator.name": self.name
             })
-            self._regulation_type = []
+            self._regulation_type = ''
+
+            # TODO: Revisar si las conformaciones del TF estan regulando
             for ri in ris:
                 ri_cyc_id = utils.get_cyc_id_by_rdb_id(ri.get('_id'), self.ris_cyc_ids)
                 try:
@@ -183,14 +185,41 @@ class Regulator(object):
                         ri_cyc_id)
                     if '|Transcription-Factor-Binding|' in ri_parents:
                         if 'Transcription-Factor-Binding' not in self._regulation_type:
-                            self._regulation_type.append('Transcription-Factor-Binding')
+                            self._regulation_type = 'Transcription-Factor-Binding'
                     if '|Allosteric-Regulation-of-RNAP|' in ri_parents:
                         if 'Allosteric-Regulation-of-RNAP' not in self._regulation_type:
-                            self._regulation_type.append('Allosteric-Regulation-of-RNAP')
+                            self._regulation_type = 'Allosteric-Regulation-of-RNAP'
                     if '|RNA-Mediated-Translation-Regulation|' in ri_parents:
                         if 'RNA-Mediated-Translation-Regulation' not in self._regulation_type:
-                            self._regulation_type.append('RNA-Mediated-Translation-Regulation')
+                            self._regulation_type = 'RNA-Mediated-Translation-Regulation'
                 except pythoncyc.PTools.PToolsError as pt_er:
                     print(pt_er, ri.get("_id"), ri_cyc_id)
+            ris_size = len(list(ris))
+            if ris_size >= 0 and self.regulator_type == 'transcriptionFactor':
+                regulator_conformations = self.regulator_obj.active_conformations
+                conformations_ids = []
+                for conf in regulator_conformations:
+                    conformations_ids.append(conf.id)
+                ris = collection.find({
+                    "regulator._id": {
+                        '$in': conformations_ids
+                    }
+                })
+                for ri in ris:
+                    ri_cyc_id = utils.get_cyc_id_by_rdb_id(ri.get('_id'), self.ris_cyc_ids)
+                    try:
+                        ri_parents = Regulator.pt_conn.get_frame_all_parents(
+                            ri_cyc_id)
+                        if '|Transcription-Factor-Binding|' in ri_parents:
+                            if 'Transcription-Factor-Binding' not in self._regulation_type:
+                                self._regulation_type = 'Transcription-Factor-Binding'
+                        if '|Allosteric-Regulation-of-RNAP|' in ri_parents:
+                            if 'Allosteric-Regulation-of-RNAP' not in self._regulation_type:
+                                self._regulation_type = 'Allosteric-Regulation-of-RNAP'
+                        if '|RNA-Mediated-Translation-Regulation|' in ri_parents:
+                            if 'RNA-Mediated-Translation-Regulation' not in self._regulation_type:
+                                self._regulation_type = 'RNA-Mediated-Translation-Regulation'
+                    except pythoncyc.PTools.PToolsError as pt_er:
+                        print(pt_er, ri.get("_id"), ri_cyc_id)
         else:
             self._regulation_type = regulation_type

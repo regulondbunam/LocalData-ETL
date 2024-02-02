@@ -1,4 +1,5 @@
 import re
+import json
 
 import pymongo
 import pandas as pd
@@ -21,6 +22,7 @@ inputFilePath = basePath + "RI_mapping_to_TFBS-HT/output/New_ev_RIs_mapped.tsv"
 file_df = pd.read_csv(inputFilePath, sep='\t', header=0)
 
 ri_list = []
+ri_without_citations = []
 for index, row in file_df.iterrows():
     if isinstance(row['New (Evidence:reference)'], str):
         if row['New (Evidence:reference)'] != '(nan)':
@@ -64,6 +66,18 @@ for index, row in file_df.iterrows():
                 'citations': citations
             }
             ri_list.append(ri_dict)
+        else:
+            ri_dict = {
+                '_id': row['1)riId'],
+                'citations': row['New (Evidence:reference)']
+            }
+            ri_without_citations.append(ri_dict)
+    else:
+        ri_dict = {
+            '_id': row['1)riId'],
+            'citations': row['New (Evidence:reference)']
+        }
+        ri_without_citations.append(ri_dict)
 
 modified_documents = 0
 for ht_ri in ri_list:
@@ -84,18 +98,32 @@ for ht_ri in ri_list:
     update_citations = []
     for ht_ri_citation in ht_ri_citations:
         if ht_ri_citation.get('evidences_id') in mg_ri_citations:
-            #print("UPDATE: ", ht_ri_citation)
+            # print("UPDATE: ", ht_ri_citation)
             update_citations.append(ht_ri_citation)
         else:
-            #print("NEW: ", ht_ri_citation)
+            # print("NEW: ", ht_ri_citation)
             new_citations.append(ht_ri_citation)
     for new_citation in new_citations:
         pass
-        modified_documents += reg_iteractions_collection.update_one(
-            {"_id": ht_ri_id},
-            {"$push": {"citations": new_citation}},
-            upsert=True
-        ).modified_count
+        try:
+            modified_documents += reg_iteractions_collection.update_one(
+                {"_id": ht_ri_id},
+                {"$push": {"citations": new_citation}},
+                upsert=True
+            ).modified_count
+        except pymongo.errors.WriteError:
+            modified_documents += 1
 print(
-    f'Total of RIs processed: {len(ri_list)}, Total of RIs Modified: {modified_documents}'
+    f'Total of RIs processed: {len(ri_list)}, Total of evidences inserted: {modified_documents}'
 )
+
+with open('modified_ris.json', 'w') as json_file:
+    json.dump(ri_list, json_file)
+with open('unmodified_ris.json', 'w') as json_file:
+    json.dump(ri_without_citations, json_file)
+'''
+    Last try 11 nov 2023:
+    Total of RIs processed: 1281, Total of RIs Modified: 1965
+    Last try 31 jan 2024
+    Total of RIs processed: 1329, Total of evidences inserted: 2107
+'''

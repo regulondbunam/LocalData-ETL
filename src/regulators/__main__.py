@@ -22,9 +22,10 @@ def regulator_object_builder(regulator_obj):
         'type': regulator_obj.regulator_type,
         'synonyms': regulator_obj.synonyms,
         'regulatorClass': regulator_obj.regulator_class,
-        'regulationType': regulator_obj.regulation_type
+        'regulationType': regulator_obj.regulation_type,
     }
     return regulator_dict
+
 
 def run(args):
 
