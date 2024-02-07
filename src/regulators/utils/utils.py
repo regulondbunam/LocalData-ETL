@@ -1,5 +1,5 @@
 import os
-import json
+# import json
 import logging
 
 import pymongo
@@ -10,10 +10,13 @@ import identifiers_api as id_api
 def set_log(log_path, log_name="regulators.log"):
     if not os.path.isdir(log_path):
         raise IOError(
-            "{} directory does not exist, please edit your log argument value".format(log_path))
+            f"{log_path} directory does not exist, please edit your log argument value")
     log_path = os.path.join(log_path, log_name)
-    logging.basicConfig(filename=log_path,
-                        format='%(levelname)s - %(asctime)s - %(message)s', filemode='w', level=logging.INFO)
+    logging.basicConfig(
+        filename=log_path,
+        format='%(levelname)s - %(asctime)s - %(message)s',
+        filemode='w',
+        level=logging.INFO)
     return log_path
 
 
@@ -48,6 +51,7 @@ def get_cyc_ids(url, collection_name, ontology_name, organism):
     )
     id_api.disconnect()
     return collection_identifiers
+
 
 def get_cyc_id_by_rdb_id(rdb_id, cyc_ids):
     cyc_id = list(cyc_ids.keys())[list(cyc_ids.values()).index(rdb_id)]

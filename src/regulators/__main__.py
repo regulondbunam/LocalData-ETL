@@ -23,6 +23,8 @@ def regulator_object_builder(regulator_obj):
         'synonyms': regulator_obj.synonyms,
         'regulatorClass': regulator_obj.regulator_class,
         'regulationType': regulator_obj.regulation_type,
+        'conformations': regulator_obj.conformations,
+        'note': regulator_obj.note
     }
     return regulator_dict
 

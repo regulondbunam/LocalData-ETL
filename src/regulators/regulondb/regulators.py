@@ -1,4 +1,4 @@
-import os
+# import os
 
 import pythoncyc
 import pymongo
@@ -7,9 +7,9 @@ from src.regulators.utils import constants as EC
 from src.regulators.utils import utils
 
 
-
 class Regulator(object):
     pt_conn = pythoncyc.select_organism(EC.ORGANISM)
+    ri_collection_name = 'regulatoryInteractions'
 
     def __init__(self, **kwargs):
         # Obj properties
@@ -32,6 +32,8 @@ class Regulator(object):
         self.synonyms = kwargs.get("synonyms", None)
         self.regulator_class = kwargs.get("regulator_class", None)
         self.regulation_type = kwargs.get("regulation_type", None)
+        self.conformations = kwargs.get("conformations", None)
+        self.note = kwargs.get("note", None)
 
     # Properties
 
@@ -162,16 +164,72 @@ class Regulator(object):
             self._regulator_class = regulator_class
 
     @property
+    def note(self):
+        return self._note
+
+    @note.setter
+    def note(self, note=None):
+        if note is None:
+            self._note = self.regulator_obj.note
+        else:
+            self._note = note
+
+    @property
+    def conformations(self):
+        return self._conformations
+
+    @conformations.setter
+    def conformations(self, conformations=None):
+        self._conformations = conformations
+        if conformations is None:
+            conformations = []
+            mongo_client = pymongo.MongoClient(self.url)
+            db = mongo_client[self.database]
+            collection = db[Regulator.ri_collection_name]
+
+            if self.regulator_type == 'transcriptionFactor':
+                active_conformations = self.regulator_obj.active_conformations
+                inactive_conformations = self.regulator_obj.inactive_conformations
+                for conf in active_conformations:
+                    conf_dict = {
+                        "_id": conf.id,
+                        "type": conf.type,
+                        "class": "active"
+                    }
+                    conformations.append(conf_dict)
+                for conf in inactive_conformations:
+                    conf_dict = {
+                        "_id": conf.id,
+                        "type": conf.type,
+                        "class": "inactive"
+                    }
+                    conformations.append(conf_dict)
+            ris = collection.find({
+                "regulator.name": self.name
+            })
+            for ri_obj in ris:
+                conf_dict = {
+                    "_id": ri_obj.get('regulator').get('_id'),
+                    "type": ri_obj.get('regulator').get('type'),
+                    "class": "active"
+                }
+                if conf_dict not in conformations:
+                    conformations.append(conf_dict)
+                    continue
+            self._conformations = conformations
+        else:
+            self._conformations = conformations
+
+    @property
     def regulation_type(self):
         return self._regulation_type
 
     @regulation_type.setter
     def regulation_type(self, regulation_type=None):
         if regulation_type is None:
-            ri_collection_name = 'regulatoryInteractions'
             mongo_client = pymongo.MongoClient(self.url)
             db = mongo_client[self.database]
-            collection = db[ri_collection_name]
+            collection = db[Regulator.ri_collection_name]
             ris = collection.find({
                 "regulator.name": self.name
             })
