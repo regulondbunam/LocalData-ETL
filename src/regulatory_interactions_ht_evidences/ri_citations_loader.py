@@ -126,4 +126,8 @@ with open('unmodified_ris.json', 'w') as json_file:
     Total of RIs processed: 1281, Total of RIs Modified: 1965
     Last try 31 jan 2024
     Total of RIs processed: 1329, Total of evidences inserted: 2107
+    Last try 06 feb 2024
+    Total of RIs processed: 1272, Total of evidences inserted: 1952
+    Last try 13 feb 2024
+    Total of RIs processed: 1272, Total of evidences inserted: 1952
 '''

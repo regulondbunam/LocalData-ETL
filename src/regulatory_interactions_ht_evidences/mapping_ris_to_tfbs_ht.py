@@ -3,10 +3,13 @@ NAME
        RIs mapping to peaks from HT-TF binding collection
 
 VERSION
-       4.0
+       4.5
 
 AUTHOR
        Paloma Lara <palomalf86@gmail.com>
+
+EDITOR
+    Felipe Betancourt <phill.betan@gmail.com>
 
 DESCRIPTION
        
@@ -33,62 +36,119 @@ CREATION DATE
 LOCATION EN GIT 
 
 '''
-print("inicio")
+
+# standard
 import os
 
+# thirdparty
 import pandas as pd
 
+# local
 from libs import arguments
+from utils import utils
+
+print("inicio")
 
 args = arguments.load()
 
-
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.max_rows', 50)
-# Create the variables containing the paths to the RIs file, the directories with the datasets for each collection
-basePath = args.directory
-riFilePath = basePath + \
-    "RI_mapping_to_TFBS-HT/input/TF-RISet_v1.0 - Sheet1.tsv"
-chipexoPath = basePath + \
-    "ChIP-exo/author_files/"
-chipseqPath = basePath + \
-    "ChIP-seq/author_files/"
-dapseqPath = basePath + \
-    "DAP-seq/author_files/"
-gselexPath = basePath + \
-    "gSELEX/author_files/"
-chipexoMetPath = basePath + \
-    "ChIP-exo/metadata/DatasetCollection-TFBS-HT_ChIP-exo_RDB11.2.xlsx"
-chipseqMetPath = basePath + \
-    "ChIP-seq/metadata/DatasetCollection-TFBS-HT_ChIP-seq_RDB11.2.xlsx"
-dapseqMetPath = basePath + \
-    "DAP-seq/metadata/DatasetCollection-TFBS-HT_DAP-seq_RDB11.2.xlsx"
-gselexMetPath = basePath + \
-    "gSELEX/metadata/DatasetCollection-TFBS-HT_gSELEX_RDB11.2.xlsx"
-# Load in a dataframe the RIs file
-dfRi = pd.read_csv(riFilePath, sep="\t", comment='#', header=0)
 
-# Load in a dataframe the metadata file of each collection:  dfMetChipexo, dfMetChipseq, dfMetGselex, dfMetDapseq
-dfMetChipexo = pd.read_excel(
-    chipexoMetPath, sheet_name="DATASET", comment='#', header=0)
-dfMetChipseq = pd.read_excel(
-    chipseqMetPath, sheet_name="DATASET", comment='#', header=0)
-dfMetGselex = pd.read_excel(
-    gselexMetPath, sheet_name="DATASET", comment='#', header=0)
-dfMetDapseq = pd.read_excel(
-    dapseqMetPath, sheet_name="DATASET", comment='#', header=0)
-# Create a vector with the name of of each collection of HT-TFBSs
-allCollections = ["Chipseq", "Chipexo", "Gselex", "Dapseq"]
-# Create the variables containing the paths for the outputfiles
-outputFilePath = basePath + \
+# Create the variables containing the paths to the RIs file, the directories with the datasets for each collection
+base_path = args.directory
+
+files_paths = {
+    'ri_file': os.path.join(base_path, "RI_mapping_to_TFBS-HT/input/TF-RISet_v1.0 - Sheet1.tsv"),
+    'chip_seq_authors': os.path.join(base_path, "ChIP-seq/author_files/"),
+    'chip_exo_authors': os.path.join(base_path, "ChIP-exo/author_files/"),
+    'dap_seq_authors': os.path.join(base_path, "DAP-seq/author_files/"),
+    'gselex_authors': os.path.join(base_path, "gSELEX/author_files/"),
+    'chip_seq_dataset': os.path.join(base_path, "ChIP-seq/metadata/DatasetCollection.xlsx"),
+    'chip_exo_dataset': os.path.join(base_path, "ChIP-exo/metadata/DatasetCollection.xlsx"),
+    'dap_seq_dataset': os.path.join(base_path, "DAP-seq/metadata/DatasetCollection.xlsx"),
+    'gselex_dataset': os.path.join(base_path, "gSELEX/metadata/DatasetCollection.xlsx"),
+}
+
+# ri_file_path = base_path + \
+#     "RI_mapping_to_TFBS-HT/input/TF-RISet_v1.0 - Sheet1.tsv"
+# chipexoPath = base_path + \
+#     "ChIP-exo/author_files/"
+# chipseqPath = base_path + \
+#     "ChIP-seq/author_files/"
+# dapseqPath = base_path + \
+#     "DAP-seq/author_files/"
+# gselexPath = base_path + \
+#     "gSELEX/author_files/"
+# chipexoMetPath = base_path + \
+#     "ChIP-exo/metadata/DatasetCollection.xlsx"
+# chipseqMetPath = base_path + \
+#     "ChIP-seq/metadata/DatasetCollection.xlsx"
+# dapseqMetPath = base_path + \
+#     "DAP-seq/metadata/DatasetCollection.xlsx"
+# gselexMetPath = base_path + \
+#     "gSELEX/metadata/DatasetCollection.xlsx"
+
+# Load in a dataframe the RIs file
+ri_dataframe = pd.read_csv(files_paths.get('ri_file', None), sep="\t", comment='#', header=0)
+
+# Load in a dataframe the metadata file of each collection
+chip_exo_dataframe = utils.load_dataframe(
+    path=files_paths.get('chip_exo_dataset', None)
+)
+chip_seq_dataframe = utils.load_dataframe(
+    path=files_paths.get('chip_seq_dataset', None)
+)
+gselex_dataframe = utils.load_dataframe(
+    path=files_paths.get('gselex_dataset', None)
+)
+dap_seq_dataframe = utils.load_dataframe(
+    path=files_paths.get('dap_seq_dataset', None)
+)
+
+# Create a vector with the name of each collection of HT-TFBSs
+allCollections = [
+        {
+            'data_frame': chip_seq_dataframe,
+            'collection_name': 'Chipseq',
+            'evidence_code': "EXP-CHIP-SEQ",
+            'authors_data_path': files_paths.get('chip_seq_authors', None)
+         },
+        {
+            'data_frame': chip_exo_dataframe,
+            'collection_name': 'Chipexo',
+            'evidence_code': "EXP-CHIP-EXO",
+            'authors_data_path': files_paths.get('chip_exo_authors', None)
+         },
+        {
+            'data_frame': gselex_dataframe,
+            'collection_name': 'Gselex',
+            'evidence_code': "EXP-GSELEX",
+            'authors_data_path': files_paths.get('gselex_authors', None)
+         },
+        {
+            'data_frame': dap_seq_dataframe,
+            'collection_name': 'Dapseq',
+            'evidence_code': "EXP-DAP-SEQ",
+            'authors_data_path': files_paths.get('dap_seq_authors', None)
+         },
+]
+
+# Create the variables containing the paths for the output files
+output_file_path = os.path.join(
+    base_path,
     "RI_mapping_to_TFBS-HT/output/Classical_confirmed_Strong_noHT_RIs_.v12.0_mapped.txt"
-errorOutputFilePath = basePath + \
+)
+error_output_file_path = os.path.join(
+    base_path,
     "RI_mapping_to_TFBS-HT/output/Error_Class_conf_withoutHTdatasets_without_coords_v0.2.txt"
-# Open the outputfiles
-outputFile = open(outputFilePath, "w")
-errorOutputFile1 = open(errorOutputFilePath, "w")
+)
+
+# Open the output files
+outputFile = open(output_file_path, "w")
+error_output_file = open(error_output_file_path, "w")
+
 # Write the column names in the output file
-risColumnsNamesArrays = dfRi.columns.values
+risColumnsNamesArrays = ri_dataframe.columns.values
 risColumnsNamesList = list(risColumnsNamesArrays)
 riColumnNames = ""
 for c in risColumnsNamesList:
@@ -97,13 +157,15 @@ print(riColumnNames)
 outputColumNames = riColumnNames + \
     "Evidence;Reference" + "\t" + "matchingpeaks" + "\n"
 outputFile.write(outputColumNames)
+
 # Filter the RIset, must remain only RIs with site, because the mapping process needs the site
-dfRis = dfRi[dfRi['7)tfrsLeft'] != "-"]
+ri_dataframes = ri_dataframe[ri_dataframe['7)tfrsLeft'] != "-"]
 print("RIs shape")
-print(dfRi.shape)
-print(dfRis.shape)
+print(ri_dataframe.shape)
+print(ri_dataframes.shape)
+
 # loop through each row of the RIs dataframe and assing the variables: riLine, riTf, riSiteStart, riSiteEnd and riCenter
-for index, row in dfRis.iterrows():
+for index, row in ri_dataframes.iterrows():
     # Save the complete RI row as a string
     riLine0 = row
     riLine = ""
@@ -121,49 +183,51 @@ for index, row in dfRis.iterrows():
     print(length)
     riCenter = riSiteStart + (length / 2)
     print(riCenter)
+
     # To start with the mapping:
     # Create a vector to save all evidence-references of peaks matching with ach RI
     evsRefs = []
+
     # Create a vector to save the data of peaks matching with ach RI
     matchingPeaks = []
+
     # If the current RI contain site then mapping it, if not, continue to the next RI
     if (riSiteStart != "-"):
         # loop through the elements of the vector allCollections
         for collection in allCollections:
-            if collection == "Chipseq":
-                currentMetadata = dfMetChipseq
-                evidenceCode = "EXP-CHIP-SEQ"
-                currentDirPath = chipseqPath
+            current_metadata = collection['data_frame']
+            collection_name = collection['collection_name']
+            authors_path = collection['authors_data_path']
+            evidence_code = collection['evidence_code']
 
-            if collection == "Chipexo":
-                currentMetadata = dfMetChipexo
-                evidenceCode = "EXP-CHIP-EXO"
-                currentDirPath = chipexoPath
+            # Saltar si el DataFrame es None o está vacío
+            if current_metadata is None or current_metadata.empty:
+                continue
 
-            if collection == "Gselex":
-                evidenceCode = "EXP-GSELEX"
-                currentMetadata = dfMetGselex
-                currentDirPath = gselexPath
+            print('Working on collection:', collection_name)
 
-            if collection == "Dapseq":
-                evidenceCode = "EXP-DAP-SEQ"
-                currentMetadata = dfMetDapseq
-                currentDirPath = dapseqPath
-
-            print(collection)
             # filter the current metadata to obtain only rows were the TF match with the TF of the current RI.
-            filteredMetadata = currentMetadata[currentMetadata["RegulonDB TF Name"] == riTf]
+            filteredMetadata = current_metadata[current_metadata["RegulonDB TF Name"] == riTf]
+
             # Ignore for the mapping proccess datasets from gSELEX that have not cut off
-            if collection == "Gselex":
+            if collection_name == "Gselex":
                 filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "IHF"]
                 filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "H-NS"]
                 filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "Fis"]
                 filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "Lrp"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "TFs"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "IHF"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "H-NS"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "Fis"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "HU"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "Dan"]
+                filteredMetadata = filteredMetadata[filteredMetadata["RegulonDB TF Name"] != "Dps"]
 
             print("Ri_TF: ", riTf)
-            print(currentMetadata.shape)
+            print(current_metadata.shape)
             print(filteredMetadata.shape)
-            # loop through each row of the filtered metadata of the current collection to compare each dataset with the same TF of the current RI
+
+            # loop through each row of the filtered metadata of the current collection_name to compare each dataset with the same TF of the current RI
             for i, row in filteredMetadata.iterrows():
                 fileName = row['Dataset File Name']
                 pmidCell = str(row['PMID'])
@@ -171,10 +235,10 @@ for index, row in dfRis.iterrows():
                 print("PMID: ", pmid)
                 # only if filename exist, the mapping can continue
                 if pd.notna(fileName):
-                    evidenceReference = "(" + str(evidenceCode) + \
+                    evidenceReference = "(" + str(evidence_code) + \
                         ";" + str(pmid) + ")"
                     # load in a dataframe the data in the file corresponding to the current file name
-                    currentDatasetPath = str(currentDirPath) + str(fileName)
+                    currentDatasetPath = str(authors_path) + str(fileName)
                     dfCurrentDataset = pd.read_csv(
                         currentDatasetPath, sep='\t', header=0)
                     print(currentDatasetPath)
@@ -213,10 +277,10 @@ for index, row in dfRis.iterrows():
                                     # If the row have not peak start and peak end or peak center or peak maximum coverage:
                                     errorOutputLine = (
                                         str(fileName) + "\t" + str(pmid) + "\n")
-                                    errorOutputFile1.write(errorOutputLine)
+                                    error_output_file.write(errorOutputLine)
                                     peakType = "d"
 
-                        fileNamePeakStart = "(" + str(evidenceCode) + ":" + str(fileName) + ":" + str(
+                        fileNamePeakStart = "(" + str(evidence_code) + ":" + str(fileName) + ":" + str(
                             peakStart) + "-" + str(peakEnd) + ":" + str(peakType) + ":" + str(peakIntensity) + ")"
                         # Mapping of the current RI to the current peak
                         if (riTf == peakTfMainName) & (riCenter > peakStart) & (riCenter < peakEnd):
@@ -239,7 +303,7 @@ for index, row in dfRis.iterrows():
                        "\t" + str(matchingPeaksString) + "\n")
         outputFile.write(outputLine1)
     else:
-        # If any peak of any collection match with the current RI, then write in the output file only the current RI line with the mapping columns empty
+        # If any peak of any collection_name match with the current RI, then write in the output file only the current RI line with the mapping columns empty
         outputLine2 = (str(riLine) + "\t" + "\n")
         outputFile.write(outputLine2)
 outputFile.close()
