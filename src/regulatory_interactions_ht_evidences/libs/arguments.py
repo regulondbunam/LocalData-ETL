@@ -44,6 +44,13 @@ def load():
         default="../RawData/EvidenceCatalog/Rules/evidences_rules.json",
     )
 
+    parser.add_argument(
+        "-au", "--author",
+        help="Data author name",
+        default="regulondb",
+        metavar="regulondb"
+    )
+
     arguments = parser.parse_args()
 
     return arguments
