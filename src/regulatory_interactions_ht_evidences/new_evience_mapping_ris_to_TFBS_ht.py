@@ -47,12 +47,14 @@ pd.set_option('display.max_rows', 50)
 # Create the variables containing the paths to the RIs-mapped file
 base_path = args.directory
 ri_mapped_file_path = base_path + \
-    "RI_mapping_to_TFBS-HT/output/Classical_confirmed_Strong_noHT_RIs_.v12.0_mapped.txt"
+    "RI_mapping_to_TFBS-HT/output/Classical_confirmed_Strong_HT_mapped.txt"
 df_ri_mapped = pd.read_csv(ri_mapped_file_path, sep="\t", comment='#', header=0)
 
 # Create the variables containing the paths for the output files
 output_file_path = base_path + "RI_mapping_to_TFBS-HT/output/New_ev_RIs_mapped.tsv"
 output_file = open(output_file_path, "w")
+summary_output_file_path = base_path + "RI_mapping_to_TFBS-HT/output/New_ev_RIs_mapped_summary.tsv"
+summary_output_file = open(summary_output_file_path, "w")
 
 # Create the header for the output file
 ris_columns_names_arrays = df_ri_mapped.columns.values
@@ -63,6 +65,7 @@ for c in ris_columns_names_list:
 print(ri_column_names)
 output_column_names = ri_column_names + "New (Evidence:reference)" + "\n"
 output_file.write(output_column_names)
+summary_output_file.write(output_column_names)
 
 print("RIs Mapped shape")
 print(df_ri_mapped.shape)
@@ -128,8 +131,11 @@ for index, row in df_ri_mapped.iterrows():
     # Write in the output file the current RI with the new evidences and references
     output_line_1 = (str(ri_line) + str(evs_refs_new_string) + "\n")
     output_file.write(output_line_1)
+    if evs_refs_new_string != '(nan)':
+        summary_output_file.write(output_line_1)
     counter_b += 1
     print("counter_b", counter_b)
 
 output_file.close()
+summary_output_file.close()
 print("Terminado")

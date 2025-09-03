@@ -131,7 +131,7 @@ output_file_path = os.path.join(
 )
 error_output_file_path = os.path.join(
     base_path,
-    "RI_mapping_to_TFBS-HT/output/Error_Class_conf_withoutHTdatasets_without_coords_v0.2.txt"
+    "RI_mapping_to_TFBS-HT/output/Error_Class_conf_withoutHTdatasets_without_coords.txt"
 )
 
 # Open the output files

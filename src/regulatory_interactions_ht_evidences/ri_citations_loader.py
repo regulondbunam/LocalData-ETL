@@ -30,6 +30,7 @@ for index, row in file_df.iterrows():
             ev_refs = ev_refs.replace(' ', '')
             ev_refs = ev_refs.replace('),(', ';')
             ev_refs = ev_refs.replace('(', '').replace(')', '')
+            ev_refs = ev_refs.replace('CIT:', '')
             ev_refs = ev_refs.split(';')
 
             citations = []
@@ -61,6 +62,7 @@ for index, row in file_df.iterrows():
                             'publications_id': pub_id,
                         }
                         citations.append(citation)
+                        print(citation)
             ri_dict = {
                 '_id': row['1)riId'],
                 'citations': citations
