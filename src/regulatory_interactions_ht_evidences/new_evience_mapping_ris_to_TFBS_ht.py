@@ -30,16 +30,34 @@ CREATION DATE
      30/06/2023
 
 LOCATION EN GIT
-
 '''
-print("inicio")
+
 import os
-
+import identifiers_api
 import pandas as pd
-
 from libs import arguments
 
+print("inicio")
+
 args = arguments.load()
+identifiers_api.connect(args.url)
+
+def get_ri_cyc_ids(database, organism, collection_name):
+    try:
+        ri_cyc_ids = identifiers_api.get_identifiers(
+            collection_name, database, organism)
+        return ri_cyc_ids
+    except Exception:
+        print(f'Error extracting {collection_name} Original IDs')
+        return {}
+
+
+ri_cyc_ids_list = get_ri_cyc_ids(
+    database=args.database,
+    organism='ECOLI',
+    collection_name='regulatoryInteractions'
+)
+
 
 pd.set_option('display.max_columns', 20)
 pd.set_option('display.max_rows', 50)
@@ -64,8 +82,9 @@ for c in ris_columns_names_list:
     ri_column_names += (c + "\t")
 print(ri_column_names)
 output_column_names = ri_column_names + "New (Evidence:reference)" + "\n"
+summary_output_column_names = ri_column_names + "New (Evidence:reference)" + "\t" + "RI_Ecocyc_ID" + "\n"
 output_file.write(output_column_names)
-summary_output_file.write(output_column_names)
+summary_output_file.write(summary_output_column_names)
 
 print("RIs Mapped shape")
 print(df_ri_mapped.shape)
@@ -132,7 +151,10 @@ for index, row in df_ri_mapped.iterrows():
     output_line_1 = (str(ri_line) + str(evs_refs_new_string) + "\n")
     output_file.write(output_line_1)
     if evs_refs_new_string != '(nan)':
-        summary_output_file.write(output_line_1)
+        ri_id = ri_line.split("\t")[0]
+        ri_cyc_id = list(ri_cyc_ids_list.keys())[list(ri_cyc_ids_list.values()).index(ri_id)]
+        summary_output_line = (str(ri_line) + str(evs_refs_new_string) + '\t' + str(ri_cyc_id) + "\n")
+        summary_output_file.write(summary_output_line)
     counter_b += 1
     print("counter_b", counter_b)
 
