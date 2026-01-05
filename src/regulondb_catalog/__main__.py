@@ -1,21 +1,68 @@
-import sys
 import os
-sys.path.insert(0, os.path.abspath('.'))
-
-import multigenomic_api
+from typing import Any
 
 from libs import utils
-from libs import arguments
+from libs import arguments as arguments_module
 from libs import regulondb_catalog
 
 
-def run(arguments):
-    utils.set_log(arguments.log, "regulondb_evidence_catalog.log")
-    print(f'Reading: \n\t{arguments.catalog}')
+def resolve_catalog_source(catalog: str) -> str:
+    """
+    Resolve the source of the catalog and always return a local file path.
+
+    - If `catalog` is an existing path, it is returned as is.
+    - Otherwise, a FileNotFoundError is raised.
+    """
+    if os.path.exists(catalog):
+        return catalog
+
+    raise FileNotFoundError(
+        f"Catalog '{catalog}' does not exist or is not a valid path."
+    )
+
+
+def run(args: Any) -> None:
+    """
+    Run the RegulonDB evidence catalog extraction process.
+
+    Parameters
+    ----------
+    args : Any
+        Object containing the command-line arguments, typically the result
+        of `arguments_module.load()`. It must include at least:
+        - catalog
+        - log
+        - new
+        - update
+        - unknwon
+        - rules
+        - url
+        - database
+        - organism
+    """
+    utils.set_log(args.log, "regulondb_evidence_catalog.log")
+
+    catalog_path = resolve_catalog_source(args.catalog)
+
+    print(f"Reading:\n\t{catalog_path}")
+
     regulondb_catalog.extract_process(
-        arguments.catalog, arguments.new, arguments.update, arguments.unknwon, arguments.rules, arguments.url, arguments.database, arguments.organism)
+        catalog_path,
+        args.new,
+        args.update,
+        args.unknwon,
+        args.rules,
+        args.url,
+        args.database,
+        args.organism,
+    )
 
 
-if __name__ == '__main__':
-    arguments = arguments.load()
-    run(arguments)
+def main() -> None:
+    """Main entry point of the script."""
+    cli_args = arguments_module.load()
+    run(cli_args)
+
+
+if __name__ == "__main__":
+    main()
