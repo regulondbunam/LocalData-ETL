@@ -78,7 +78,7 @@ class Regulator(object):
         return self._citations
 
     @citations.setter
-    def citations(self, citations=None):
+    def citations(self, citations=None):  # TODO: solo las citations de las conformaciones.
         if citations is None:
             mg_citations = self.regulator_obj.citations
             citations = []
@@ -207,6 +207,7 @@ class Regulator(object):
             ris = collection.find({
                 "regulator.name": self.name
             })
+
             for ri_obj in ris:
                 conf_dict = {
                     "_id": ri_obj.get('regulator').get('_id'),

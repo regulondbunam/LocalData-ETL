@@ -1,4 +1,5 @@
 import os
+import sys
 # import json
 import logging
 
@@ -56,3 +57,29 @@ def get_cyc_ids(url, collection_name, ontology_name, organism):
 def get_cyc_id_by_rdb_id(rdb_id, cyc_ids):
     cyc_id = list(cyc_ids.keys())[list(cyc_ids.values()).index(rdb_id)]
     return cyc_id
+
+
+def print_progress(current, total, collection_name, bar_length=40):
+    """
+    Displays a real-time progress bar in the console, updating on the same line.
+
+    This function calculates the completion fraction, generates a visual progress
+    bar using block characters, and outputs the progress percentage and current
+    count relative to the total.
+
+    Args:
+        current (int): The number of items currently processed.
+        total (int): The total number of items to be processed.
+        collection_name (str): The name of the collection or process being tracked.
+        bar_length (int, optional): The fixed length of the progress bar display.
+                                    Defaults to 40.
+
+    Returns:
+        None: The function only performs output to stdout.
+    """
+    fraction = current / total if total else 1
+    filled = int(bar_length * fraction)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(fraction * 100)
+    sys.stdout.write(f"\rProcessing {collection_name}: |{bar}| {percent}% ({current}/{total}) objects processed")
+    sys.stdout.flush()

@@ -69,6 +69,8 @@ def run(args):
 
     regulators_list = []
 
+    total_objects = len(list(tf_collection)) + len(pd_collection) + len(ri_collection)
+    processed = 0
     for tf_obj in tf_collection:
         regulator_obj = Regulator(
             regulator_obj=tf_obj,
@@ -82,6 +84,12 @@ def run(args):
         regulator_dict = regulator_object_builder(regulator_obj)
         if regulator_dict not in regulators_list:
             regulators_list.append(regulator_dict)
+        processed += 1
+        utils.print_progress(
+            current=processed,
+            total=total_objects,
+            collection_name="Regulators"
+        )
 
     srna_products = []
     srna_products_ids = []
@@ -101,6 +109,12 @@ def run(args):
             if regulator_dict not in srna_products:
                 srna_products.append(regulator_dict)
                 srna_products_ids.append(regulator_dict.get('_id'))
+        processed += 1
+        utils.print_progress(
+            current=processed,
+            total=total_objects,
+            collection_name="Regulators"
+        )
 
     for ri_obj in ri_collection:
         if not ri_obj.regulator:
@@ -129,6 +143,12 @@ def run(args):
                 regulator_dict = regulator_object_builder(regulator_obj)
                 if regulator_dict not in regulators_list:
                     regulators_list.append(regulator_dict)
+        processed += 1
+        utils.print_progress(
+            current=processed,
+            total=total_objects,
+            collection_name="Regulators"
+        )
     mg_api.disconnect()
 
     regulators_clean = []
@@ -136,7 +156,7 @@ def run(args):
         regulators_clean.append(
             utils.get_only_properties_with_values(regulator))
 
-    print(f'There are {len(regulators_clean)} reglators')
+    print(f'\n{len(regulators_clean)} regulators were found')
 
     with open(f"{args.directory}/Regulators.json", "w") as outfile:
         json.dump(regulators_clean, outfile, indent=4, sort_keys=True)
