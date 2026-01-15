@@ -3,8 +3,8 @@
 import pythoncyc
 import pymongo
 
-from regulators.utils import constants as EC
-from regulators.utils import utils
+from utils import constants as EC
+from utils import utils
 
 
 class Regulator(object):

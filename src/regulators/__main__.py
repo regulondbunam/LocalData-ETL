@@ -8,7 +8,7 @@ import multigenomic_api as mg_api
 
 from libs import arguments
 from utils import utils
-from regulondb.regulators import Regulator
+from regulondb import regulators
 
 
 def regulator_object_builder(regulator_obj):
@@ -72,7 +72,7 @@ def run(args):
     total_objects = len(list(tf_collection)) + len(pd_collection) + len(ri_collection)
     processed = 0
     for tf_obj in tf_collection:
-        regulator_obj = Regulator(
+        regulator_obj = regulators.Regulator(
             regulator_obj=tf_obj,
             regulator_type='transcriptionFactor',
             regulator_cyc_id=utils.get_cyc_id_by_rdb_id(tf_obj.id, tf_ids),
@@ -96,7 +96,7 @@ def run(args):
     for pd_obj in pd_collection:
         pd_type = pd_obj.type
         if pd_type and pd_type == 'small RNA':
-            regulator_obj = Regulator(
+            regulator_obj = regulators.Regulator(
                 regulator_obj=pd_obj,
                 regulator_type=pd_type,
                 regulator_cyc_id=utils.get_cyc_id_by_rdb_id(pd_obj.id, pd_ids),
@@ -130,7 +130,7 @@ def run(args):
             if ri_obj.regulator.type == 'regulatoryContinuant':
                 continuant_obj = mg_api.regulatory_continuants.find_by_id(
                     ri_obj.regulator.id)
-                regulator_obj = Regulator(
+                regulator_obj = regulators.Regulator(
                     regulator_obj=continuant_obj,
                     regulator_type=ri_obj.regulator.type,
                     regulator_cyc_id=utils.get_cyc_id_by_rdb_id(
