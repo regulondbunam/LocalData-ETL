@@ -5,8 +5,8 @@ from typing import Any, Dict, List, Optional
 import multigenomic_api
 import identifiers_api
 
-from regulondb_catalog.libs import utils
-from regulondb_catalog.libs import evidence_catalog_utils
+from libs import utils
+from libs import evidence_catalog_utils
 
 # Globals (kept for backward compatibility)
 evidence_codes: Dict[str, str] = {}
