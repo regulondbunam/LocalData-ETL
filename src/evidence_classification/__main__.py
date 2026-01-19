@@ -10,7 +10,7 @@ from libs import collections
 
 def run(args):
 
-    #mg_api.connect(args.database, args.url)
+    mg_api.connect(args.database, args.url)
 
     mongo_client = pymongo.MongoClient(args.url)
     mg_db = mongo_client[args.database]
@@ -23,7 +23,7 @@ def run(args):
         'version': args.version,
         'source': args.source,
         'sourceversion': args.sourceversion,
-
+        'mg_api': mg_api
     }
 
     if args.all or args.promoters:
