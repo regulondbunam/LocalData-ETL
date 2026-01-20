@@ -12,6 +12,18 @@ def load():
     )
 
     parser.add_argument(
+        "-set", "--set-file",
+        help="Directory where is the TF-RI Set file",
+        default="../InputData"
+    )
+
+    parser.add_argument(
+        "-out", "--output",
+        help="Directory where the result files will be located",
+        default="../RawData"
+    )
+
+    parser.add_argument(
         "-db", "--database",
         help="Data base name",
         default="regulondbmultigenomic",
