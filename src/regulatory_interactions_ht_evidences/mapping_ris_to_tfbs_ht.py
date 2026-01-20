@@ -1,4 +1,5 @@
-"""RI-to-HT peaks mapping (unified output)
+"""
+RI-to-HT peaks mapping (unified output)
 
 This script consolidates mappings between Regulatory Interactions (RIs) and
 high-throughput (HT) TF-binding peaks coming from multiple collections
@@ -20,6 +21,7 @@ Phases:
 
 # standard
 import os
+import sys
 from typing import Dict, Any, Set
 
 # thirdparty
@@ -32,13 +34,28 @@ from utils import utils
 
 print("Start")
 
+
+def print_progress(current, total, collection_name, bar_length=40):
+    """
+    Displays a real-time progress bar in the console, updating on the same line.
+    """
+    fraction = current / total if total else 1
+    filled = int(bar_length * fraction)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(fraction * 100)
+    sys.stdout.write(
+        f"\rProcessing {collection_name}: |{bar}| {percent}% ({current}/{total}) objects processed"
+    )
+    sys.stdout.flush()
+
+
 # ========== Phase 1: Config & external services ==========
 args = arguments.load()
 identifiers_api.connect(args.url)
 
 # ========== Phase 2: I/O setup (unified outputs) ==========
-INPUT_DIR = "../InputData/"  # HT_RIs/"
-OUTPUT_DIR = "../RawData"
+INPUT_DIR = args.set_file
+OUTPUT_DIR = args.output
 
 COMMON_OUT_PATH = os.path.join(OUTPUT_DIR, "Classical_confirmed_Strong_HT_mapped.tsv")
 COMMON_ERR_PATH = os.path.join(OUTPUT_DIR, "Error_Class_conf_withoutHTdatasets_without_coords.tsv")
@@ -48,19 +65,7 @@ pd.set_option('display.max_rows', 50)
 
 
 def get_ri_cyc_ids(database: str, organism: str, collection_name: str) -> Dict[str, str]:
-    """Fetch a mapping of EcoCyc frame IDs to RI identifiers.
-
-    Retrieves a dictionary mapping EcoCyc frame IDs (keys) to RI IDs (values),
-    used later to annotate each RI row with its EcoCyc identifier.
-
-    Args:
-        database: Target database name (e.g., RegulonDB).
-        organism: Organism code (e.g., 'ECOLI').
-        collection_name: Collection to query (e.g., 'regulatoryInteractions').
-
-    Returns:
-        Dict[str, str]: Mapping {ecocyc_id: ri_id}. Empty dict on error.
-    """
+    """Fetch a mapping of EcoCyc frame IDs to RI identifiers."""
     try:
         ri_cyc_ids = identifiers_api.get_identifiers(collection_name, database, organism)
         return ri_cyc_ids
@@ -77,32 +82,12 @@ ri_cyc_ids_list = get_ri_cyc_ids(
 )
 
 # ========== Accumulator structure (per RI) ==========
-# key: RI _id (first column of RI file)
-# value: {
-#   'base_line': str of original RI columns (WITHOUT appended columns),
-#   'evidence': set(str),
-#   'peaks': set(str),
-#   'status': set(str),
-#   'ri_cyc_id': str
-# }
 ri_acc: Dict[str, Dict[str, Any]] = {}
 header_written = False
 
 
 def ri_has_ht_evidence(ri_set_row: pd.Series, evi_reference: str) -> bool:
-    """Check if RI already contains the HT evidence reference.
-
-    Compares the provided evidence-reference pair against RI-level and
-    site-level (tfrs) citation fields present in the RI set row.
-
-    Args:
-        ri_set_row: Row from the RI DataFrame with evidence/PMID fields.
-        evi_reference: Evidence-reference string like
-            "(EVIDENCE_CODE;CIT:PMID;ORIGIN)" or "(EVIDENCE_CODE;PMID;ORIGIN)".
-
-    Returns:
-        bool: True if the citation already exists in the RI or site, else False.
-    """
+    """Check if RI already contains the HT evidence reference."""
     evi_reference = evi_reference.replace("(", "").replace(")", "")
     try:
         evi, ref, *_ = evi_reference.split(";")
@@ -208,6 +193,9 @@ with open(COMMON_OUT_PATH, "w", encoding="utf-8") as out_f, open(COMMON_ERR_PATH
         # ---- 5.1 Keep only RIs with site coordinates (required for mapping) ----
         ri_df_sites = ri_df[ri_df['site_left'] != "-"]
 
+        total_ris = len(ri_df_sites)
+        processed_ris = 0
+
         # ---- 5.2 Iterate over RIs and perform peak overlap checks ----
         for _, ri_row in ri_df_sites.iterrows():
             # Rebuild the original RI line (tab-joined) to preserve original order
@@ -215,6 +203,8 @@ with open(COMMON_OUT_PATH, "w", encoding="utf-8") as out_f, open(COMMON_ERR_PATH
             ri_tf = ri_row['tf_name']
 
             if pd.isna(ri_row['site_left']) or pd.isna(ri_row['site_right']):
+                processed_ris += 1
+                print_progress(processed_ris, total_ris, data_origin)
                 continue
 
             # Compute RI center from left/right coords
@@ -223,7 +213,6 @@ with open(COMMON_OUT_PATH, "w", encoding="utf-8") as out_f, open(COMMON_ERR_PATH
             ri_center = ri_site_start + (ri_site_end - ri_site_start) / 2
 
             # Use the first column as RI ID key
-            # ri_id = str(ri_line_base).split("\t")[0]
             ri_id = ri_row.get('ri_id')
 
             # Map RI -> EcoCyc ID
@@ -343,6 +332,12 @@ with open(COMMON_OUT_PATH, "w", encoding="utf-8") as out_f, open(COMMON_ERR_PATH
             if not ri_acc[ri_id]['ri_cyc_id'] and ri_cyc_id:
                 ri_acc[ri_id]['ri_cyc_id'] = ri_cyc_id
 
+            processed_ris += 1
+            print_progress(processed_ris, total_ris, data_origin)
+
+        if total_ris:
+            print()  # newline after progress bar for this origin
+
     # ========== Phase 6: Final unified write ==========
     for ri_id, bundle in ri_acc.items():
         base_line = bundle['base_line']
@@ -351,7 +346,6 @@ with open(COMMON_OUT_PATH, "w", encoding="utf-8") as out_f, open(COMMON_ERR_PATH
         status_str = ", ".join(sorted(bundle['status'])) if bundle['status'] else ""
         ri_cyc_id = bundle['ri_cyc_id'] or ""
 
-        # IMPORTANT: explicit tabs between original RI columns and appended columns
         out_f.write(f"{base_line}\t{evs_str}\t{peaks_str}\t{ri_cyc_id}\t{status_str}\n")
 
 print(f"Finished, RI processed {counter}")
