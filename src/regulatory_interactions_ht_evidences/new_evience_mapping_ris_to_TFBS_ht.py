@@ -61,7 +61,7 @@
 #     # 2) Read + sanitize
 #     df = pd.read_csv(ri_mapped_file_path, sep="\t", comment="#", header=0)
 #     df.rename(columns=lambda c: c.strip(), inplace=True)
-#     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+#     df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
 #
 #     # ---- Normalized column names (no legacy compat needed) ----
 #     COL_TFRS = "site_evidence"
@@ -203,7 +203,7 @@ def main() -> None:
     # 2) Read + sanitize
     df = pd.read_csv(ri_mapped_file_path, sep="\t", comment="#", header=0)
     df.rename(columns=lambda c: c.strip(), inplace=True)
-    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+    df = df.map(lambda x: x.strip() if isinstance(x, str) else x)
 
     # ---- Normalized column names (no legacy compat needed) ----
     COL_TFRS = "site_evidence"
