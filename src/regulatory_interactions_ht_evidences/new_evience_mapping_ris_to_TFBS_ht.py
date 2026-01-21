@@ -1,163 +1,300 @@
-'''
-NAME
-      Identification of new HT-binding evidence from the RIs mapping to HT-peaks process
+# """Identify new HT-binding evidences from the unified RI→peaks mapping output.
+#
+# Reads the unified TSV produced by the RI→HT peaks mapping step and flags which
+# HT evidences are NEW relative to the existing RI/site evidences.
+#
+# Outputs:
+# - ../RawData/New_ev_RIs_mapped.tsv          → new evidences WITHOUT ORIGIN (EVIDENCE:PMID)
+# - ../RawData/New_ev_RIs_mapped_report.tsv   → new evidences WITH ORIGIN (EVIDENCE:PMID:ORIGIN) + New Count
+#
+# Phases:
+# 1) Load config and set I/O paths.
+# 2) Read and sanitize the mapped RI table.
+# 3) Iterate rows:
+#    - Parse HT evidences robustly (supports multiple entries and ;ORIGIN).
+#    - Compare ONLY the evidence CODE against RI/site evidences.
+#    - Build lists of "new" evidences for output (no ORIGIN) and report (with ORIGIN).
+#    - Preserve and extend STATUS with RI_WITH_NEW_EVIDENCE when applicable.
+# 4) Write both outputs with proper headers.
+# """
+#
+# # standard
+# import os
+# import re
+# from typing import List
+#
+# # thirdparty
+# import pandas as pd
+#
+# # local
+# from libs import arguments
+#
+#
+# def parse_ht_evidences(cell: str) -> List[str]:
+#     """Return list of HT evidences (strings without parentheses).
+#
+#     Accepts: "(EVID;PMID;ORIGIN), (EVID;PMID;ORIGIN)" or "(EVID;PMID;ORIGIN)".
+#     If no parentheses are found, returns [cell] as a fallback.
+#     """
+#     if not isinstance(cell, str) or cell.strip() == "" or cell.lower() == "nan":
+#         return []
+#     items = re.findall(r"\((.*?)\)", cell)
+#     return items if items else [cell]
+#
+#
+# def main() -> None:
+#     print("Start")
+#
+#     # 1) Args + pandas opts
+#     args = arguments.load()
+#     pd.set_option("display.max_columns", 20)
+#     pd.set_option("display.max_rows", 50)
+#
+#     # I/O (from CLI arguments)
+#     INPUT_DIR = args.output
+#     OUTPUT_DIR = args.output
+#
+#     ri_mapped_file_path = os.path.join(INPUT_DIR, "Classical_confirmed_Strong_HT_mapped.tsv")
+#     output_file_path = os.path.join(OUTPUT_DIR, "New_ev_RIs_mapped.tsv")               # WITHOUT ORIGIN
+#     report_output_file_path = os.path.join(OUTPUT_DIR, "New_ev_RIs_mapped_report.tsv") # WITH ORIGIN
+#
+#     # 2) Read + sanitize
+#     df = pd.read_csv(ri_mapped_file_path, sep="\t", comment="#", header=0)
+#     df.rename(columns=lambda c: c.strip(), inplace=True)
+#     df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
+#
+#     # ---- Normalized column names (no legacy compat needed) ----
+#     COL_TFRS = "site_evidence"
+#     COL_RI = "ri_evidence"
+#     COL_HT = "Evidence;Reference"
+#     COL_STATUS = "STATUS"
+#
+#     if COL_HT not in df.columns:
+#         raise KeyError("Missing 'Evidence;Reference' column in mapped input.")
+#
+#     # 4) Write outputs
+#     with open(output_file_path, "w", encoding="utf-8") as f_out, \
+#          open(report_output_file_path, "w", encoding="utf-8") as f_rep:
+#
+#         base_header = "\t".join(df.columns.tolist())
+#         extra_name = "New (Evidence:reference)"     # WITHOUT ORIGIN
+#         f_out.write(base_header + "\t" + extra_name + "\n")
+#         f_rep.write(base_header + "\t" + extra_name + "\tNew Count\n")
+#
+#         print("RIs Mapped shape")
+#         print(df.shape)
+#
+#         # 3) Iterate rows
+#         for _, row in df.iterrows():
+#             # Strings for comparison
+#             tfrs_evidence = str(row.get(COL_TFRS, "") or "")
+#             ri_evidence   = str(row.get(COL_RI, "")   or "")
+#             ht_ev_str     = str(row.get(COL_HT, "")   or "")
+#
+#             # Parse HT evidences
+#             ht_items = parse_ht_evidences(ht_ev_str)
+#
+#             new_evs_out: List[str] = []  # WITHOUT ORIGIN -> "(EVIDENCE:PMID)"
+#             new_evs_rep: List[str] = []  # WITH ORIGIN    -> "(EVIDENCE:PMID:ORIGIN)"
+#
+#             for item in ht_items:
+#                 parts = [p.strip() for p in item.split(";")]
+#                 code = parts[0] if parts else ""
+#
+#                 # "New" if evidence CODE not present in site/RI evidences
+#                 if code and (code not in tfrs_evidence) and (code not in ri_evidence):
+#                     # report: keep ORIGIN (all segments), normalize ; -> :
+#                     new_evs_rep.append("(" + item.replace(";", ":") + ")")
+#
+#                     # output: only EVIDENCE:PMID (first two segments)
+#                     if len(parts) >= 2:
+#                         new_evs_out.append("(" + parts[0] + ":" + parts[1] + ")")
+#                     else:
+#                         new_evs_out.append("(" + item.replace(";", ":") + ")")
+#
+#             # Extend STATUS if applicable
+#             ri_line_row = [str(v) for v in row.values]
+#             if new_evs_rep:
+#                 status_idx = df.columns.get_loc(COL_STATUS)
+#                 prev_status = ri_line_row[status_idx]
+#                 tag = "RI_WITH_NEW_EVIDENCE"
+#                 if prev_status and prev_status.lower() != "nan":
+#                     if tag not in prev_status:
+#                         ri_line_row[status_idx] = f"{prev_status}, {tag}"
+#                 else:
+#                     ri_line_row[status_idx] = tag
+#
+#             ri_line = "\t".join(ri_line_row)
+#
+#             # Write
+#             new_out_str = ", ".join(new_evs_out)  # WITHOUT ORIGIN
+#             new_rep_str = ", ".join(new_evs_rep)  # WITH ORIGIN
+#             new_count = str(len(new_evs_rep))
+#
+#             f_out.write(ri_line + "\t" + new_out_str + "\n")
+#             f_rep.write(ri_line + "\t" + new_rep_str + "\t" + new_count + "\n")
+#
+#     print("Finished")
+#     print(f"Output (without ORIGIN):  {output_file_path}")
+#     print(f"Report (with ORIGIN):    {report_output_file_path}")
+#
+#
+# if __name__ == "__main__":
+#     main()
+"""Identify new HT-binding evidences from the unified RI→peaks mapping output.
 
-VERSION
-       3.0
+Reads the unified TSV produced by the RI→HT peaks mapping step and flags which
+HT evidences are NEW relative to the existing RI/site evidences.
 
-AUTHOR
-       Paloma Lara <palomalf86@gmail.com>
+Outputs:
+- ../RawData/New_ev_RIs_mapped.tsv          → new evidences WITHOUT ORIGIN (EVIDENCE:PMID)
+- ../RawData/New_ev_RIs_mapped_report.tsv   → new evidences WITH ORIGIN (EVIDENCE:PMID:ORIGIN) + New Count
+"""
 
-DESCRIPTION
-
-CATEGORY
-       mapping programs
-
-USAGE
-       program [OPTIONS]
-
-ARGUMENTS
-
-SOFTWARE REQUERIMENTS
-
-INPUT
-     RISet.txt file mapped containing the additional "Evidence;Referencecolumns" and "matchingpeaks"
-     (the output file from the script "Mapeo_RIs_to_TFBSs-HT_v4.0.py")
-
-OUTPUT
-     An RISet_mapped.txt file with three additional columns: "Evidence;Referencecolumns" "and matchingpeaks" "New (Evidence:reference)"
-CREATION DATE
-     30/06/2023
-
-LOCATION EN GIT
-'''
-
+# standard
 import os
-import identifiers_api
+import re
+import sys
+from typing import List
+
+# thirdparty
 import pandas as pd
+
+# local
 from libs import arguments
 
-print("inicio")
 
-args = arguments.load()
-identifiers_api.connect(args.url)
-
-def get_ri_cyc_ids(database, organism, collection_name):
-    try:
-        ri_cyc_ids = identifiers_api.get_identifiers(
-            collection_name, database, organism)
-        return ri_cyc_ids
-    except Exception:
-        print(f'Error extracting {collection_name} Original IDs')
-        return {}
+def print_progress(current: int, total: int, label: str, bar_length: int = 40) -> None:
+    """
+    Displays a real-time progress bar in the console, updating on the same line.
+    """
+    fraction = current / total if total else 1
+    filled = int(bar_length * fraction)
+    bar = "█" * filled + "-" * (bar_length - filled)
+    percent = int(fraction * 100)
+    sys.stdout.write(f"\r{label}: |{bar}| {percent}% ({current}/{total})")
+    sys.stdout.flush()
 
 
-ri_cyc_ids_list = get_ri_cyc_ids(
-    database=args.database,
-    organism='ECOLI',
-    collection_name='regulatoryInteractions'
-)
+def parse_ht_evidences(cell: str) -> List[str]:
+    """Return list of HT evidences (strings without parentheses)."""
+    if not isinstance(cell, str) or cell.strip() == "" or cell.lower() == "nan":
+        return []
+    items = re.findall(r"\((.*?)\)", cell)
+    return items if items else [cell]
 
 
-pd.set_option('display.max_columns', 20)
-pd.set_option('display.max_rows', 50)
+def main() -> None:
+    print("Start")
 
-# Create the variables containing the paths to the RIs-mapped file
-base_path = args.directory
-ri_mapped_file_path = base_path + \
-    "RI_mapping_to_TFBS-HT/output/Classical_confirmed_Strong_HT_mapped.txt"
-df_ri_mapped = pd.read_csv(ri_mapped_file_path, sep="\t", comment='#', header=0)
+    # 1) Args + pandas opts
+    args = arguments.load()
+    pd.set_option("display.max_columns", 20)
+    pd.set_option("display.max_rows", 50)
 
-# Create the variables containing the paths for the output files
-output_file_path = base_path + "RI_mapping_to_TFBS-HT/output/New_ev_RIs_mapped.tsv"
-output_file = open(output_file_path, "w")
-summary_output_file_path = base_path + "RI_mapping_to_TFBS-HT/output/New_ev_RIs_mapped_summary.tsv"
-summary_output_file = open(summary_output_file_path, "w")
+    # I/O (from CLI arguments)
+    INPUT_DIR = args.output
+    OUTPUT_DIR = args.output
 
-# Create the header for the output file
-ris_columns_names_arrays = df_ri_mapped.columns.values
-ris_columns_names_list = list(ris_columns_names_arrays)
-ri_column_names = ""
-for c in ris_columns_names_list:
-    ri_column_names += (c + "\t")
-print(ri_column_names)
-output_column_names = ri_column_names + "New (Evidence:reference)" + "\n"
-summary_output_column_names = ri_column_names + "New (Evidence:reference)" + "\t" + "RI_Ecocyc_ID" + "\n"
-output_file.write(output_column_names)
-summary_output_file.write(summary_output_column_names)
+    ri_mapped_file_path = os.path.join(INPUT_DIR, "Classical_confirmed_Strong_HT_mapped.tsv")
+    output_file_path = os.path.join(OUTPUT_DIR, "New_ev_RIs_mapped.tsv")               # WITHOUT ORIGIN
+    report_output_file_path = os.path.join(OUTPUT_DIR, "New_ev_RIs_mapped_report.tsv") # WITH ORIGIN
 
-print("RIs Mapped shape")
-print(df_ri_mapped.shape)
+    # 2) Read + sanitize
+    df = pd.read_csv(ri_mapped_file_path, sep="\t", comment="#", header=0)
+    df.rename(columns=lambda c: c.strip(), inplace=True)
+    df = df.applymap(lambda x: x.strip() if isinstance(x, str) else x)
 
-counter = 0
-counter_b = 0
+    # ---- Normalized column names (no legacy compat needed) ----
+    COL_TFRS = "site_evidence"
+    COL_RI = "ri_evidence"
+    COL_HT = "Evidence;Reference"
+    COL_STATUS = "STATUS"
 
-# loop through each row of the RIs dataframe
-for index, row in df_ri_mapped.iterrows():
-    # Save the complete RI row as a string
-    ri_line_0 = row
-    ri_line = ""
-    for a in ri_line_0:
-        b = str(a)
-        ri_line += (b + "\t")
-    print(ri_line)
-    counter += 1
-    print(counter)
+    if COL_HT not in df.columns:
+        raise KeyError("Missing 'Evidence;Reference' column in mapped input.")
 
-    # Create a vector for the new evidence-references
-    evs_refs_new = []
-    tfrs_evidences = row.get('20)tfrsEvidence', None)
-    tfrs_evidence = str(tfrs_evidences)
-    ri_evidences = row.get('21)riEvidence', None)
-    ri_evidence = str(ri_evidences)
-    ht_evidence = row.get('Evidence;Reference', None)
-    ht_evidence_string = str(ht_evidence)
+    # Progress setup
+    total_rows = len(df.index)
+    processed = 0
+    label = "Scanning RIs for NEW HT evidences"
 
-    if "), (" in ht_evidence_string:
-        print("yes")
-        ht_evidence_vector = ht_evidence_string.split("), (")
-        monitor = 0
-        for i in ht_evidence_vector:
-            single_evidence_1 = i
-            single_evidence_2 = single_evidence_1.replace("(", "")
-            single_evidence_3 = single_evidence_2.replace(")", "")
-            single_evidence_vector = single_evidence_3.split(";")
-            single_evidence_code = single_evidence_vector[0]
-            print(single_evidence_code)
-            # This is the most important step for determine if the evidence is new or not
-            if (single_evidence_code not in tfrs_evidence) and (single_evidence_code not in ri_evidence):
-                new_single_evidence = "(" + str(single_evidence_3) + ")"
-                new_single_evidence_s = new_single_evidence.replace(";", ":")
-                evs_refs_new.append(new_single_evidence_s)
+    # 4) Write outputs
+    with open(output_file_path, "w", encoding="utf-8") as f_out, \
+         open(report_output_file_path, "w", encoding="utf-8") as f_rep:
 
-    else:
-        single_evidence = ht_evidence_string.replace("(", "")
-        single_evidence = single_evidence.replace(")", "")
-        single_evidence_vector = single_evidence.split(";")
-        single_evidence_code = single_evidence_vector[0]
-        monitor = 0
-        if (single_evidence_code not in tfrs_evidence) and (single_evidence_code not in ri_evidence):
-            new_single_evidence = "(" + str(single_evidence) + ")"
-            new_single_evidence_s = new_single_evidence.replace(";", ":")
-            evs_refs_new.append(new_single_evidence_s)
+        base_header = "\t".join(df.columns.tolist())
+        extra_name = "New (Evidence:reference)"     # WITHOUT ORIGIN
+        f_out.write(base_header + "\t" + extra_name + "\n")
+        f_rep.write(base_header + "\t" + extra_name + "\tNew Count\n")
 
-    # The next four lines of code are only for modify the format of the data
-    evs_refs_new_2 = str(evs_refs_new)
-    evs_refs_new_3 = evs_refs_new_2.replace("[", "")
-    evs_refs_new_4 = evs_refs_new_3.replace("]", "")
-    evs_refs_new_string = evs_refs_new_4.replace("'", "")
+        print("RIs Mapped shape")
+        print(df.shape)
 
-    # Write in the output file the current RI with the new evidences and references
-    output_line_1 = (str(ri_line) + str(evs_refs_new_string) + "\n")
-    output_file.write(output_line_1)
-    if evs_refs_new_string != '(nan)':
-        ri_id = ri_line.split("\t")[0]
-        ri_cyc_id = list(ri_cyc_ids_list.keys())[list(ri_cyc_ids_list.values()).index(ri_id)]
-        summary_output_line = (str(ri_line) + str(evs_refs_new_string) + '\t' + str(ri_cyc_id) + "\n")
-        summary_output_file.write(summary_output_line)
-    counter_b += 1
-    print("counter_b", counter_b)
+        # 3) Iterate rows
+        for _, row in df.iterrows():
+            # Strings for comparison
+            tfrs_evidence = str(row.get(COL_TFRS, "") or "")
+            ri_evidence   = str(row.get(COL_RI, "")   or "")
+            ht_ev_str     = str(row.get(COL_HT, "")   or "")
 
-output_file.close()
-summary_output_file.close()
-print("Terminado")
+            # Parse HT evidences
+            ht_items = parse_ht_evidences(ht_ev_str)
+
+            new_evs_out: List[str] = []  # WITHOUT ORIGIN -> "(EVIDENCE:PMID)"
+            new_evs_rep: List[str] = []  # WITH ORIGIN    -> "(EVIDENCE:PMID:ORIGIN)"
+
+            for item in ht_items:
+                parts = [p.strip() for p in item.split(";")]
+                code = parts[0] if parts else ""
+
+                # "New" if evidence CODE not present in site/RI evidences
+                if code and (code not in tfrs_evidence) and (code not in ri_evidence):
+                    # report: keep ORIGIN (all segments), normalize ; -> :
+                    new_evs_rep.append("(" + item.replace(";", ":") + ")")
+
+                    # output: only EVIDENCE:PMID (first two segments)
+                    if len(parts) >= 2:
+                        new_evs_out.append("(" + parts[0] + ":" + parts[1] + ")")
+                    else:
+                        new_evs_out.append("(" + item.replace(";", ":") + ")")
+
+            # Extend STATUS if applicable
+            ri_line_row = [str(v) for v in row.values]
+            if new_evs_rep:
+                status_idx = df.columns.get_loc(COL_STATUS)
+                prev_status = ri_line_row[status_idx]
+                tag = "RI_WITH_NEW_EVIDENCE"
+                if prev_status and prev_status.lower() != "nan":
+                    if tag not in prev_status:
+                        ri_line_row[status_idx] = f"{prev_status}, {tag}"
+                else:
+                    ri_line_row[status_idx] = tag
+
+            ri_line = "\t".join(ri_line_row)
+
+            # Write
+            new_out_str = ", ".join(new_evs_out)  # WITHOUT ORIGIN
+            new_rep_str = ", ".join(new_evs_rep)  # WITH ORIGIN
+            new_count = str(len(new_evs_rep))
+
+            f_out.write(ri_line + "\t" + new_out_str + "\n")
+            f_rep.write(ri_line + "\t" + new_rep_str + "\t" + new_count + "\n")
+
+            # ---- progress update (visual feedback only) ----
+            processed += 1
+            # actualiza en cada iteración; si quieres menos “ruido”, lo podemos hacer cada N filas
+            print_progress(processed, total_rows, label)
+
+    # finish progress line
+    if total_rows:
+        sys.stdout.write("\n")
+        sys.stdout.flush()
+
+    print("Finished")
+    print(f"Output (without ORIGIN):  {output_file_path}")
+    print(f"Report (with ORIGIN):    {report_output_file_path}")
+
+
+if __name__ == "__main__":
+    main()
