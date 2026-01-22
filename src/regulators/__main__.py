@@ -8,7 +8,7 @@ import multigenomic_api as mg_api
 
 from libs import arguments
 from utils import utils
-from regulondb.regulators import Regulator
+from regulondb import regulators
 
 
 def regulator_object_builder(regulator_obj):
@@ -21,14 +21,12 @@ def regulator_object_builder(regulator_obj):
         'externalCrossReferences': regulator_obj.external_cross_references,
         'type': regulator_obj.regulator_type,
         'synonyms': regulator_obj.synonyms,
-        'regulatorClass': regulator_obj.regulator_class
+        'regulatorClass': regulator_obj.regulator_class,
+        'regulationType': regulator_obj.regulation_type,
+        'conformations': regulator_obj.conformations,
+        'note': regulator_obj.note
     }
     return regulator_dict
-
-
-def get_cyc_id_by_rdb_id(rdb_id, cyc_ids):
-    cyc_id = list(cyc_ids.keys())[list(cyc_ids.values()).index(rdb_id)]
-    return cyc_id
 
 
 def run(args):
@@ -53,6 +51,12 @@ def run(args):
         ontology_name=None,
         organism=args.organism
     )
+    ris_cyc_ids = utils.get_cyc_ids(
+        url=args.url,
+        collection_name='regulatoryInteractions',
+        ontology_name=None,
+        organism=args.organism
+    )
 
     mongo_client = pymongo.MongoClient(args.url)
     db = mongo_client[args.database]
@@ -65,57 +69,86 @@ def run(args):
 
     regulators_list = []
 
+    total_objects = len(list(tf_collection)) + len(pd_collection) + len(ri_collection)
+    processed = 0
     for tf_obj in tf_collection:
-        regulator_obj = Regulator(
+        regulator_obj = regulators.Regulator(
             regulator_obj=tf_obj,
             regulator_type='transcriptionFactor',
-            regulator_cyc_id=get_cyc_id_by_rdb_id(tf_obj.id, tf_ids)
+            regulator_cyc_id=utils.get_cyc_id_by_rdb_id(tf_obj.id, tf_ids),
+            database=args.database,
+            url=args.url,
+            organism=args.organism,
+            ris_cyc_ids=ris_cyc_ids
         )
         regulator_dict = regulator_object_builder(regulator_obj)
-        # print(regulator_dict)
         if regulator_dict not in regulators_list:
             regulators_list.append(regulator_dict)
+        processed += 1
+        utils.print_progress(
+            current=processed,
+            total=total_objects,
+            collection_name="Regulators"
+        )
 
     srna_products = []
     srna_products_ids = []
     for pd_obj in pd_collection:
         pd_type = pd_obj.type
         if pd_type and pd_type == 'small RNA':
-            regulator_obj = Regulator(
+            regulator_obj = regulators.Regulator(
                 regulator_obj=pd_obj,
                 regulator_type=pd_type,
-                regulator_cyc_id=get_cyc_id_by_rdb_id(pd_obj.id, pd_ids)
+                regulator_cyc_id=utils.get_cyc_id_by_rdb_id(pd_obj.id, pd_ids),
+                database=args.database,
+                url=args.url,
+                organism=args.organism,
+                ris_cyc_ids=ris_cyc_ids
             )
             regulator_dict = regulator_object_builder(regulator_obj)
-            # print(regulator_dict)
             if regulator_dict not in srna_products:
                 srna_products.append(regulator_dict)
                 srna_products_ids.append(regulator_dict.get('_id'))
+        processed += 1
+        utils.print_progress(
+            current=processed,
+            total=total_objects,
+            collection_name="Regulators"
+        )
 
     for ri_obj in ri_collection:
+        if not ri_obj.regulator:
+            continue
         if ri_obj.regulator.type in ['product', 'regulatoryContinuant']:
             if ri_obj.regulator.id in srna_products_ids:
                 srna_product = next(
                     (item for item in srna_products if item['_id']
                      == ri_obj.regulator.id), None
                 )
-                #print(ri_obj.regulator.id, srna_product)
                 if srna_product not in regulators_list:
-                    # print(srna_product)
                     regulators_list.append(srna_product)
             if ri_obj.regulator.type == 'regulatoryContinuant':
                 continuant_obj = mg_api.regulatory_continuants.find_by_id(
                     ri_obj.regulator.id)
-                regulator_obj = Regulator(
+                regulator_obj = regulators.Regulator(
                     regulator_obj=continuant_obj,
                     regulator_type=ri_obj.regulator.type,
-                    regulator_cyc_id=get_cyc_id_by_rdb_id(
-                        continuant_obj.id, continuant_ids)
+                    regulator_cyc_id=utils.get_cyc_id_by_rdb_id(
+                        continuant_obj.id, continuant_ids),
+                    database=args.database,
+                    url=args.url,
+                    organism=args.organism,
+                    ris_cyc_ids=ris_cyc_ids
                 )
                 regulator_dict = regulator_object_builder(regulator_obj)
                 if regulator_dict not in regulators_list:
-                    # print(regulator_dict)
                     regulators_list.append(regulator_dict)
+        processed += 1
+        utils.print_progress(
+            current=processed,
+            total=total_objects,
+            collection_name="Regulators"
+        )
     mg_api.disconnect()
 
     regulators_clean = []
@@ -123,9 +156,9 @@ def run(args):
         regulators_clean.append(
             utils.get_only_properties_with_values(regulator))
 
-    print(f'There are {len(regulators_clean)} reglators')
+    print(f'\n{len(regulators_clean)} regulators were found')
 
-    with open("Results/Regulators/Regulators.json", "w") as outfile:
+    with open(f"{args.directory}/Regulators.json", "w") as outfile:
         json.dump(regulators_clean, outfile, indent=4, sort_keys=True)
 
     utils.updater(regulators_clean, collection)

@@ -63,7 +63,7 @@ def ae_updater(mg_object_id, additive_evidences, collection_name, mg_db):
     formatted_new_values = {
         "$set": new_values
     }
-    #print(collection_name, " : ", new_values)
+    # print(collection_name, " : ", new_values)
     collection.update_one(query, formatted_new_values)
 
 
@@ -100,7 +100,8 @@ def ae_uploader(additive_evidences, collection_name, mg_db):
             collection.insert_one(new_values)
             pass
         except pymongo.errors.DuplicateKeyError:
-            logging.error(f'"{ae_evidence_id}" is already in RegulonDB.')
+            pass
+            # logging.error(f'"{ae_evidence_id}" is already in RegulonDB.')
 
 
 def build_identifier_object(object_id, **kwargs):

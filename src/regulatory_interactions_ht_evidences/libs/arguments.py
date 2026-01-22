@@ -8,7 +8,19 @@ def load():
     parser.add_argument(
         "-d", "--directory",
         help="Directory where the json files are located",
-        default="InputData/DatasetsTFBSRegulonDB12.0/"
+        default="../InputData/HT_RIs/DatasetsTFBSRegulonDB12.0/"
+    )
+
+    parser.add_argument(
+        "-set", "--set-file",
+        help="Directory where is the TF-RI Set file",
+        default="../InputData"
+    )
+
+    parser.add_argument(
+        "-out", "--output",
+        help="Directory where the result files will be located",
+        default="../RawData"
     )
 
     parser.add_argument(
@@ -35,13 +47,20 @@ def load():
     parser.add_argument(
         "-l", "--log",
         help="Directory that contains log of the invalid data, the reason why the data is being rejected.",
-        default="Results/log/"
+        default="../logs/ht_ris_log/"
     )
 
     parser.add_argument(
         "-r", "--rules",
         help="The evidence rules file",
-        default="Results/Rules/evidences_rules.json",
+        default="../RawData/EvidenceCatalog/Rules/evidences_rules.json",
+    )
+
+    parser.add_argument(
+        "-au", "--author",
+        help="Data author name",
+        default="regulondb",
+        metavar="regulondb"
     )
 
     arguments = parser.parse_args()

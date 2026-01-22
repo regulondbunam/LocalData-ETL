@@ -8,7 +8,7 @@ def load():
     parser.add_argument(
         "-d", "--directory",
         help="Directory where the json files are located",
-        default="Results/"
+        default="../RawData/EvidenceCatalog"
     )
 
     parser.add_argument(
@@ -27,7 +27,7 @@ def load():
     parser.add_argument(
         "-l", "--log",
         help="Directory that contains log of the invalid data, the reason why the data is being rejected.",
-        default="Results/log/"
+        default="../logs/EvidenceCatalog/"
     )
 
     parser.add_argument(
@@ -41,14 +41,14 @@ def load():
         "-upd",
         "--update",
         help="Sets the program to update existing evidences",
-        default="Results/update_evidences.json"
+        default="../RawData/EvidenceCatalog/update_evidences.json"
     )
 
     parser.add_argument(
         "-upl",
         "--upload",
         help="Sets the program to upload new evidences",
-        default="Results/new_evidences.json"
+        default="../RawData/EvidenceCatalog/new_evidences.json"
     )
 
     arguments = parser.parse_args()
